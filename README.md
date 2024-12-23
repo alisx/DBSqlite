@@ -2,6 +2,8 @@
 
 基于 Sqlite3 的数据操控工具，对连接(connect)、游标（cursor）概念进行了封装，支持使用 Dict 数据类型来操作数据库。
 
+支持事务。
+
 ## 简单示例
 
 ```python
@@ -95,3 +97,28 @@ print('ret:',ret)
   - `rows` 需要更新的记录，`list`类型
 
 - *返回*：更新库表的结果，`list`类型
+
+### 事务
+
+```python
+"""测试事务功能"""
+conn = db.get_conn()
+try:
+    # 插入数据
+    db.de("INSERT INTO users (id, name, age) VALUES (4, 'David', 40);", conn=conn)
+
+    # 查询事务中的数据
+    result = db.qo("SELECT * FROM users WHERE id = 4", conn=conn)
+    assert result["name"] == "David"
+
+    # 模拟事务回滚
+    raise Exception("模拟事务失败")
+except Exception:
+    conn.rollback()
+finally:
+    db.rls_conn(conn)
+
+# 确保数据未提交
+result = db.qo("SELECT * FROM users WHERE id = 4")
+assert result is None
+```
